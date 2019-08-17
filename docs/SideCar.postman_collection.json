@@ -1,0 +1,66 @@
+{
+	"info": {
+		"_postman_id": "20fb7ee1-e545-4176-bb4b-5f1acb528503",
+		"name": "SideCar",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get Available Versions",
+			"request": {
+				"method": "OPTIONS",
+				"header": [],
+				"url": {
+					"raw": "https://localhost:5001/artifacts",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "5001",
+					"path": [
+						"artifacts"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/mono.js",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://localhost:5001/mono.js",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "5001",
+					"path": [
+						"mono.js"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/mono.wasm",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://localhost:5001/mono.wasm",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "5001",
+					"path": [
+						"mono.wasm"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
