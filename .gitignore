@@ -344,3 +344,4 @@ src/HQ.Build/Properties/launchSettings.json
 
 # Testing databases
 /src/**/*.db
+/SideCar.Demo/builds/
