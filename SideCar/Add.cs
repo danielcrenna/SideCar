@@ -15,6 +15,7 @@ namespace SideCar
 		{
 			services.AddOptions();
 			services.AddScoped<ArtifactService>();
+			services.AddScoped<PackageService>();
 			if (configureAction != null)
 				services.Configure(configureAction);
 			return services;
