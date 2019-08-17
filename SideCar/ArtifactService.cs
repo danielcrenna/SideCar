@@ -81,7 +81,7 @@ namespace SideCar
 			var files = new HashSet<string>();
 	        foreach (var file in Directory.EnumerateFiles(_options.Value.SdkLocation))
 	        {
-		        var match = Regex.Match(file, "mono-wasm-(\\W+)-.zip", RegexOptions.Compiled);
+		        var match = Regex.Match(file, "mono-wasm-(\\w+).zip", RegexOptions.Compiled);
 		        if (match.Success)
 			        files.Add(match.Groups[1].Value);
 	        }
