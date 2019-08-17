@@ -6,6 +6,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="builds\**" />
+    <Compile Remove="output\**" />
+    <Content Remove="builds\**" />
+    <Content Remove="output\**" />
+    <EmbeddedResource Remove="builds\**" />
+    <EmbeddedResource Remove="output\**" />
+    <None Remove="builds\**" />
+    <None Remove="output\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.2.0" PrivateAssets="All" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.2.3" />
@@ -17,6 +28,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SideCar.AspNetCore\SideCar.AspNetCore.csproj" />
+    <ProjectReference Include="..\SideCar.Demo.Dependency\SideCar.Demo.Dependency.csproj" />
   </ItemGroup>
 
 </Project>
