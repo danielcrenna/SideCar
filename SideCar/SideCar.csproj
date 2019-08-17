@@ -7,6 +7,7 @@
   <ItemGroup>
     <PackageReference Include="AngleSharp" Version="0.12.1" />
     <PackageReference Include="ILLink.Tasks" Version="0.1.5-preview-1841731" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="2.2.0" />
   </ItemGroup>
