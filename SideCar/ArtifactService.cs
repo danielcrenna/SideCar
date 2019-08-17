@@ -88,7 +88,7 @@ namespace SideCar
 	        return Task.FromResult(files);
         }
 
-        public Task<Stream> GetArtifactAsync(string buildHash, Artifact artifact, CancellationToken cancellationToken)
+        public async Task<string> GetArtifactAsync(string buildHash, Artifact artifact, CancellationToken cancellationToken)
         {
 	        cancellationToken.ThrowIfCancellationRequested();
 			Directory.CreateDirectory(_options.Value.SdkLocation);
@@ -106,12 +106,14 @@ namespace SideCar
 						switch (artifact)
 						{
 							case Artifact.MonoJs:
-								if (entry.FullName == "builds/release/mono.js")
-									return Task.FromResult(entry.Open());
+								if (entry.FullName == "builds/release/mono.wasm")
+									using (var sr = new StreamReader(entry.Open()))
+										return await sr.ReadToEndAsync();
 								break;
 							case Artifact.MonoWasm:
 								if (entry.FullName == "builds/release/mono.wasm")
-									return Task.FromResult(entry.Open());
+									using (var sr = new StreamReader(entry.Open()))
+										return await sr.ReadToEndAsync();
 								break;
 							default:
 								throw new ArgumentOutOfRangeException(nameof(artifact), artifact, null);
