@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -20,8 +21,11 @@ namespace SideCar
             _options = options;
         }
 
-        public async Task<string> GetLatestStableBuildAsync(CancellationToken cancellationToken)
+		public async Task<string> GetLatestStableBuildAsync(CancellationToken cancellationToken)
         {
+	        if (!_options.Value.DownloadArtifactsWhenMissing)
+		        return (await GetBuildsAsync(cancellationToken)).FirstOrDefault();
+
 			cancellationToken.ThrowIfCancellationRequested();
 			Directory.CreateDirectory(_options.Value.SdkLocation);
 
@@ -79,9 +83,9 @@ namespace SideCar
 	        Directory.CreateDirectory(_options.Value.SdkLocation);
 
 			var files = new HashSet<string>();
-	        foreach (var file in Directory.EnumerateFiles(_options.Value.SdkLocation))
+	        foreach (var file in Directory.EnumerateFiles(_options.Value.SdkLocation).Select(x => new FileInfo(x)).OrderByDescending(x => x.LastWriteTimeUtc))
 	        {
-		        var match = Regex.Match(file, "mono-wasm-(\\w+).zip", RegexOptions.Compiled);
+				var match = Regex.Match(file.Name, "mono-wasm-(\\w+).zip", RegexOptions.Compiled);
 		        if (match.Success)
 			        files.Add(match.Groups[1].Value);
 	        }
