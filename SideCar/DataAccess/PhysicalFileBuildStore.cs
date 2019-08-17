@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -7,22 +8,23 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using SideCar.Configuration;
 using SideCar.Models;
 
 namespace SideCar.DataAccess
 {
-	public class PhysicalFileArtifactStore : IArtifactStore
+	public class PhysicalFileBuildStore : IBuildStore
 	{
 		private readonly IOptionsSnapshot<SideCarOptions> _options;
-		private readonly ILogger<PhysicalFileArtifactStore> _logger;
+		private readonly ILogger<PhysicalFileBuildStore> _logger;
 
-		public PhysicalFileArtifactStore(IOptionsSnapshot<SideCarOptions> options, ILogger<PhysicalFileArtifactStore> logger)
+		public PhysicalFileBuildStore(IOptionsSnapshot<SideCarOptions> options, ILogger<PhysicalFileBuildStore> logger)
 		{
 			_options = options;
 			_logger = logger;
 		}
 
-		public Task<HashSet<string>> GetAvailableArtifactsAsync(CancellationToken cancellationToken)
+		public Task<HashSet<string>> GetAvailableBuildsAsync(CancellationToken cancellationToken)
 		{
 			cancellationToken.ThrowIfCancellationRequested();
 			Directory.CreateDirectory(_options.Value.BuildLocation);
@@ -41,14 +43,17 @@ namespace SideCar.DataAccess
 			return Task.FromResult(files);
 		}
 
-		public async Task<string> LoadBuildContentAsync(string buildHash, ArtifactFile artifactFile, CancellationToken cancellationToken)
+		public async Task<string> LoadBuildContentAsync(string buildHash, BuildFile buildFile, CancellationToken cancellationToken)
 		{
 			cancellationToken.ThrowIfCancellationRequested();
 			Directory.CreateDirectory(_options.Value.BuildLocation);
 
 			var filePath = Path.Combine(_options.Value.BuildLocation, $"mono-wasm-{buildHash}.zip");
 			if (!File.Exists(filePath))
+			{
+				_logger?.LogWarning("{FilePath} not found", filePath);
 				return null;
+			}
 
 			using (var fs = File.OpenRead(filePath))
 			{
@@ -56,14 +61,14 @@ namespace SideCar.DataAccess
 				{
 					foreach (var entry in zip.Entries)
 					{
-						switch (artifactFile)
+						switch (buildFile)
 						{
-							case ArtifactFile.MonoJs:
-								if (entry.FullName == "builds/release/mono.wasm")
+							case BuildFile.MonoJs:
+								if (entry.FullName == "builds/release/mono.js")
 									using (var sr = new StreamReader(entry.Open()))
 										return await sr.ReadToEndAsync();
 								break;
-							case ArtifactFile.MonoWasm:
+							case BuildFile.MonoWasm:
 								if (entry.FullName == "builds/release/mono.wasm")
 									using (var sr = new StreamReader(entry.Open()))
 										return await sr.ReadToEndAsync();
@@ -76,6 +81,33 @@ namespace SideCar.DataAccess
 			}
 
 			return null;
+		}
+
+		public Task<bool> TryProvisionBuildAsync(string buildHash, CancellationToken cancellationToken = default)
+		{
+			cancellationToken.ThrowIfCancellationRequested();
+
+			try
+			{
+				var sdkDir = Path.GetFullPath(Path.Combine(_options.Value.BuildLocation, $"mono-wasm-{buildHash}"));
+				if (Directory.Exists(sdkDir))
+				{
+					_logger?.LogDebug("Build {BuildHash} already provisioned", buildHash);
+					return Task.FromResult(true);
+				}
+
+				_logger?.LogDebug("Provisioning build {BuildHash}", buildHash);
+				Directory.CreateDirectory(sdkDir);
+				ZipFile.ExtractToDirectory($"{sdkDir}.zip", sdkDir);
+				_logger?.LogDebug("SDK extracted to {SdkDir}", sdkDir);
+
+				return Task.FromResult(true);
+			}
+			catch (Exception e)
+			{
+				_logger?.LogError(e, "Failed to provided {BuildHash}", buildHash);
+				return Task.FromResult(false);
+			}
 		}
 	}
 }

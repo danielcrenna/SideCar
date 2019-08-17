@@ -4,28 +4,32 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
+using SideCar.Extensions;
 using SideCar.Services;
 
 namespace SideCar.AspNetCore
 {
 	public class SideCarController : Controller
     {
-        private readonly ArtifactService _artifacts;
+        private readonly BuildService _builds;
         private readonly PackageService _packages;
+        private readonly ILogger<SideCarController> _logger;
 
         public CancellationToken CancellationToken => HttpContext.RequestAborted;
 
-        public SideCarController(ArtifactService artifacts, PackageService packages)
+        public SideCarController(BuildService builds, PackageService packages, ILogger<SideCarController> logger)
         {
-	        _artifacts = artifacts;
+	        _builds = builds;
 	        _packages = packages;
+	        _logger = logger;
         }
 
         [HttpOptions("builds")]
         public async Task<IActionResult> BuildOptions()
         {
-            var versions = await _artifacts.GetAvailableBuildsAsync(CancellationToken);
+            var versions = await _builds.GetAvailableBuildsAsync(CancellationToken);
             return Ok(new { data = versions });
         }
 
@@ -40,13 +44,13 @@ namespace SideCar.AspNetCore
 		[HttpGet("mono.js")]
         public async Task<IActionResult> GetMonoJs([FromQuery(Name = "v")] string version = null)
         {
-            return await TryServeArtifactFileAsync(ArtifactFile.MonoJs, version);
+            return await TryServeBuildFileAsync(BuildFile.MonoJs, version);
         }
 
         [HttpGet("mono.wasm")]
         public async Task<IActionResult> GetMonoWasm([FromQuery(Name = "v")] string version = null)
         {
-            return await TryServeArtifactFileAsync(ArtifactFile.MonoWasm, version);
+            return await TryServeBuildFileAsync(BuildFile.MonoWasm, version);
         }
 
         [HttpGet("runtime.js")]
@@ -58,14 +62,16 @@ namespace SideCar.AspNetCore
         [HttpGet("mono-config.js")]
         public async Task<IActionResult> GetMonoConfig([FromQuery(Name = "p")] string package, [FromQuery(Name = "v")] string version = null)
         {
-			return await TryServePackageFileAsync(package, PackageFile.RuntimeJs, version);
+			return await TryServePackageFileAsync(package, PackageFile.MonoConfig, version);
         }
 
-		private async Task<IActionResult> TryServeArtifactFileAsync(ArtifactFile artifactFile, string version = null)
+		#region Build Files
+
+		private async Task<IActionResult> TryServeBuildFileAsync(BuildFile buildFile, string version = null)
         {
             if (Request.Headers.TryGetValue(HeaderNames.IfNoneMatch, out var etag))
             {
-                var resources = await _artifacts.GetAvailableBuildsAsync(CancellationToken);
+                var resources = await _builds.GetAvailableBuildsAsync(CancellationToken);
                 foreach (var hash in etag)
                     if (resources.Contains(hash))
                         return StatusCode((int)HttpStatusCode.NotModified);
@@ -73,40 +79,44 @@ namespace SideCar.AspNetCore
 
             if (!string.IsNullOrWhiteSpace(version))
             {
-	            var versionHash = await _artifacts.GetBuildByVersionAsync(version, CancellationToken);
+	            var versionHash = await _builds.GetBuildByVersionAsync(version, CancellationToken);
 	            if (versionHash == null)
-		            return NotFound(new { Message = $"Specified build version '{version}' not found." });
+		            return NotFound(new { Message = $"Specified build {version} not found." });
 
-	            return await ServeArtifactFileAsync(version, artifactFile, CancellationToken);
+	            return await ServeBuildFileAsync(version, buildFile, CancellationToken);
 			}
-
-            var buildHash = await _artifacts.GetLatestStableBuildAsync(CancellationToken);
+			
+            var buildHash = await _builds.GetLatestStableBuildAsync(CancellationToken);
             if (buildHash == null)
 	            return NotFound(new { Message = "No builds found."});
 
-            return await ServeArtifactFileAsync(buildHash, artifactFile, CancellationToken);
+            return await ServeBuildFileAsync(buildHash, buildFile, CancellationToken);
         }
 
-        private async Task<IActionResult> ServeArtifactFileAsync(string buildHash, ArtifactFile artifactFile,
+        private async Task<IActionResult> ServeBuildFileAsync(string buildHash, BuildFile buildFile,
 	        CancellationToken cancel)
         {
-            var file = await _artifacts.LoadBuildContentAsync(buildHash, artifactFile, cancel);
+            var file = await _builds.LoadBuildContentAsync(buildHash, buildFile, cancel);
             if (file == null)
                 return NotFound();
             Response.Headers.Add(HeaderNames.ETag, buildHash);
             Response.Headers.Add(HeaderNames.CacheControl, "public,max-age=31536000");
-            switch (artifactFile)
+            switch (buildFile)
             {
-                case ArtifactFile.MonoJs:
-                    return File(Encoding.UTF8.GetBytes(file), "text/javascript");
-                case ArtifactFile.MonoWasm:
+                case BuildFile.MonoJs:
+                    return File(Encoding.UTF8.GetBytes(file), "application/javascript");
+                case BuildFile.MonoWasm:
                     return File(Encoding.UTF8.GetBytes(file), "application/wasm");
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(artifactFile), artifactFile, null);
+                    throw new ArgumentOutOfRangeException(nameof(buildFile), buildFile, null);
             }
         }
 
-        private async Task<IActionResult> TryServePackageFileAsync(string package, PackageFile packageFile, string version = null)
+		#endregion
+
+		#region Package Files
+
+		private async Task<IActionResult> TryServePackageFileAsync(string package, PackageFile packageFile, string version = null)
         {
 	        if (string.IsNullOrWhiteSpace(package))
 		        return BadRequest(new { Message = "Package name required." });
@@ -119,27 +129,31 @@ namespace SideCar.AspNetCore
 						return StatusCode((int) HttpStatusCode.NotModified);
 			}
 
-			string buildHash;
+			string buildHash = null;
 			if (!string.IsNullOrWhiteSpace(version))
 			{
-				buildHash = await _artifacts.GetBuildByVersionAsync(version, CancellationToken);
+				buildHash = await _builds.GetBuildByVersionAsync(version, CancellationToken);
 				if (buildHash == null)
-					return NotFound(new { Message = $"Specified build version '{version}' not found." });
+					return NotFound(new { Message = $"Specified build {version} not found." });
 			}
-
-			buildHash = await _artifacts.GetLatestStableBuildAsync(CancellationToken);
+			buildHash = buildHash ?? await _builds.GetLatestStableBuildAsync(CancellationToken);
 			if (buildHash == null)
 				return NotFound(new { Message = "No builds found." });
 
-			var assembly = _packages.FindPackageAssemblyByName(package);
+			var assembly = await _packages.FindPackageAssemblyByNameAsync(package, CancellationToken);
 			if (assembly == null)
 				return NotFound(new { Message = $"No package assemblies found matching name '{package}." });
 
-			var result = await _packages.PackageAsync(assembly, buildHash, CancellationToken);
-			if (!result.Successful)
-				return StatusCode((int) HttpStatusCode.InternalServerError, new { Message = "Build error." });
+			var packageHash = assembly.ComputePackageHash(buildHash);
 
-			var packageHash = _packages.ComputePackageHash(assembly, buildHash);
+			var packages = await _packages.GetAvailablePackagesAsync(CancellationToken);
+			if (packages.Contains(packageHash))
+				return await ServePackageFileAsync(packageHash, packageFile, CancellationToken);
+
+			var result = await _packages.CompilePackageAsync(assembly, buildHash, CancellationToken);
+			if (!result.Successful)
+				return StatusCode((int) HttpStatusCode.InternalServerError, new { Message = "Package compile error." });
+
 			return await ServePackageFileAsync(packageHash, packageFile, CancellationToken);
 		}
 
@@ -148,18 +162,21 @@ namespace SideCar.AspNetCore
         {
 	        var file = await _packages.LoadPackageContentAsync(packageHash, packageFile, cancel);
 	        if (file == null)
-		        return NotFound();
+		        return NotFound(new { Message = $"Package {packageHash} not found."});
+
 	        Response.Headers.Add(HeaderNames.ETag, packageHash);
 	        Response.Headers.Add(HeaderNames.CacheControl, "public,max-age=31536000");
 	        switch (packageFile)
 	        {
 		        case PackageFile.MonoConfig:
-			        return File(Encoding.UTF8.GetBytes(file), "text/javascript");
+			        return File(Encoding.UTF8.GetBytes(file), "application/javascript");
 		        case PackageFile.RuntimeJs:
-			        return File(Encoding.UTF8.GetBytes(file), "text/javascript");
+			        return File(Encoding.UTF8.GetBytes(file), "application/javascript");
 		        default:
 			        throw new ArgumentOutOfRangeException(nameof(packageFile), packageFile, null);
 	        }
         }
+
+		#endregion
 	}
 }

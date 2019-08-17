@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using SideCar.Configuration;
 using SideCar.DataAccess;
 using SideCar.Models;
 using SideCar.Services;
@@ -20,12 +21,13 @@ namespace SideCar
 			services.AddLogging();
 			services.AddOptions();
 
-			services.TryAddScoped<ArtifactService>();
+			services.TryAddScoped<BuildService>();
 			services.TryAddScoped<PackageService>();
-			services.TryAddScoped<IArtifactResolver, WebArtifactResolver>();
+			services.TryAddScoped<IBuildResolver, WebBuildResolver>();
+			services.TryAddScoped<IBuildStore, PhysicalFileBuildStore>();
+			services.TryAddScoped<IPackageCompiler, PhysicalFilePackageCompiler>();
 			services.TryAddScoped<IPackageStore, PhysicalFilePackageStore>();
-			services.TryAddScoped<IArtifactStore, PhysicalFileArtifactStore>();
-
+			
 			if (configureAction != null)
 				services.Configure(configureAction);
 			return services;

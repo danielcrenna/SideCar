@@ -1,6 +1,6 @@
 ﻿namespace SideCar
 {
-    public enum ArtifactFile
+    public enum BuildFile
     {
         MonoJs,
         MonoWasm
