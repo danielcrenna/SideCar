@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using System;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,6 +30,8 @@ namespace SideCar.Demo
             {
                 app.UseDeveloperExceptionPage();
             }
+
+            Console.WriteLine(typeof(Simple.Complex).Name);
 
             app.UseSideCarApi();
             app.UseMvc();
