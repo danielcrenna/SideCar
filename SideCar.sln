@@ -5,11 +5,17 @@ VisualStudioVersion = 16.0.29102.190
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SideCar.Demo", "SideCar.Demo\SideCar.Demo.csproj", "{7498DF8B-C93A-44C1-8390-C7AE0C26A7E3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SideCar", "SideCar\SideCar.csproj", "{149E70A2-6B2C-475F-A078-342D5C1A9F7A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SideCar", "SideCar\SideCar.csproj", "{149E70A2-6B2C-475F-A078-342D5C1A9F7A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SideCar.AspNetCore", "SideCar.AspNetCore\SideCar.AspNetCore.csproj", "{A1927412-42A6-458D-BA5C-2A99C8D9B5C6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SideCar.Demo.Dependency", "SideCar.Demo.Dependency\SideCar.Demo.Dependency.csproj", "{477FD663-7A22-40CF-9626-81863AAF504B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SideCar.Demo.Dependency", "SideCar.Demo.Dependency\SideCar.Demo.Dependency.csproj", "{477FD663-7A22-40CF-9626-81863AAF504B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{98716785-010F-444E-A259-D56395B41317}"
+	ProjectSection(SolutionItems) = preProject
+		LICENSE = LICENSE
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
