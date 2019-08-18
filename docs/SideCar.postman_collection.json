@@ -6,59 +6,149 @@
 	},
 	"item": [
 		{
-			"name": "Get Available Versions",
+			"name": "Assets",
+			"item": [
+				{
+					"name": "/mono.wasm",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://localhost:5001/mono.wasm",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"mono.wasm"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/mono.js",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://localhost:5001/mono.js",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"mono.js"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/runtime.js",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://localhost:5001/runtime.js?p=SideCar.Demo.Dependency",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"runtime.js"
+							],
+							"query": [
+								{
+									"key": "p",
+									"value": "SideCar.Demo.Dependency",
+									"description": "Hash of the package linked to this asset file."
+								},
+								{
+									"key": "v",
+									"value": "",
+									"description": "Optionally specify the Mono SDK build hash used to compile the package.",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/mono-config.js",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://localhost:5001/mono-config.js?p=SideCar.Demo.Dependency",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"mono-config.js"
+							],
+							"query": [
+								{
+									"key": "p",
+									"value": "SideCar.Demo.Dependency",
+									"description": "Hash of the package linked to this asset file."
+								},
+								{
+									"key": "v",
+									"value": "",
+									"description": "Optionally specify the Mono SDK build hash used to compile the package.",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Get Available Builds",
 			"request": {
 				"method": "OPTIONS",
 				"header": [],
 				"url": {
-					"raw": "https://localhost:5001/artifacts",
+					"raw": "https://localhost:5001/builds",
 					"protocol": "https",
 					"host": [
 						"localhost"
 					],
 					"port": "5001",
 					"path": [
-						"artifacts"
+						"builds"
 					]
-				}
+				},
+				"description": "Retrieves a list of all available Mono SDKs that are available from the build service, by hash.\n\nUse this hash when referring to specific versions in your requests."
 			},
 			"response": []
 		},
 		{
-			"name": "/mono.js",
+			"name": "Get Available Packages",
 			"request": {
-				"method": "GET",
+				"method": "OPTIONS",
 				"header": [],
 				"url": {
-					"raw": "https://localhost:5001/mono.js",
+					"raw": "https://localhost:5001/packages",
 					"protocol": "https",
 					"host": [
 						"localhost"
 					],
 					"port": "5001",
 					"path": [
-						"mono.js"
+						"packages"
 					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "/mono.wasm",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "https://localhost:5001/mono.wasm",
-					"protocol": "https",
-					"host": [
-						"localhost"
-					],
-					"port": "5001",
-					"path": [
-						"mono.wasm"
-					]
-				}
+				},
+				"description": "Retrieves a list of all available compiled WASM packages. This hash is unique to the package root assembly and the build that was used to package it.\n\nUse this hash when referring to specific versions in your requests."
 			},
 			"response": []
 		}
