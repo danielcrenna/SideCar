@@ -34,7 +34,7 @@ namespace SideCar.Services
 			if (!provisioned)
 				return new PackageResult { Successful = false, Errors = "Failed to provision build." };
 
-			return await _compiler.CompilePackageAsync(assembly, buildHash);
+			return await _compiler.CompilePackageAsync(assembly, buildHash, cancellationToken);
 		}
 
 		public async Task<Assembly> FindPackageAssemblyByNameAsync(string packageName, CancellationToken cancellationToken = default)
@@ -47,9 +47,14 @@ namespace SideCar.Services
 			return await _store.GetAvailablePackagesAsync(cancellationToken);
 		}
 
-		public async Task<string> LoadPackageContentAsync(string packageHash, PackageFile packageFile, CancellationToken cancellationToken = default)
+		public async Task<byte[]> LoadPackageContentAsync(string packageHash, PackageFile packageFile, CancellationToken cancellationToken = default)
 		{
 			return await _store.LoadPackageContentAsync(packageHash, packageFile, cancellationToken);
+		}
+
+		public async Task<byte[]> LoadManagedLibraryAsync(string packageHash, string fileName, CancellationToken cancellationToken)
+		{
+			return await _store.LoadManagedLibraryAsync(packageHash, fileName, cancellationToken);
 		}
 	}
 }

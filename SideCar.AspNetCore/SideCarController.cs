@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -33,7 +33,7 @@ namespace SideCar.AspNetCore
             return Ok(new { data = versions });
         }
 
-        [HttpOptions("packages")]
+		[HttpOptions("packages")]
         public async Task<IActionResult> PackageOptions()
         {
 			// FIXME: provide assembly and build info!
@@ -41,7 +41,8 @@ namespace SideCar.AspNetCore
 	        return Ok(new { data = versions });
         }
 
-		[HttpGet("mono.js")]
+		
+        [HttpGet("mono.js")]
         public async Task<IActionResult> GetMonoJs([FromQuery(Name = "v")] string version = null)
         {
             return await TryServeBuildFileAsync(BuildFile.MonoJs, version);
@@ -64,6 +65,24 @@ namespace SideCar.AspNetCore
         {
 			return await TryServePackageFileAsync(package, PackageFile.MonoConfig, version);
         }
+
+        [HttpGet("managed/{fileName}")]
+        public async Task<IActionResult> GetManagedLibrary(string fileName)
+        {
+			// FIXME: modify configuration to pass-through the package ID in the path
+			var packageHash = (await _packages.GetAvailablePackagesAsync(CancellationToken)).LastOrDefault();
+			if (packageHash == null)
+				return NotFound(new {Message = "No package found"});
+
+			var buffer = await _packages.LoadManagedLibraryAsync(packageHash, fileName, CancellationToken);
+			if (buffer == null)
+				return NotFound(new { Message = $"Package {packageHash} not found." });
+
+			Response.Headers.Add(HeaderNames.ETag, packageHash);
+			Response.Headers.Add(HeaderNames.CacheControl, "public,max-age=31536000");
+
+			return File(buffer, "application/octet-stream");
+		}
 
 		#region Build Files
 
@@ -96,17 +115,17 @@ namespace SideCar.AspNetCore
         private async Task<IActionResult> ServeBuildFileAsync(string buildHash, BuildFile buildFile,
 	        CancellationToken cancel)
         {
-            var file = await _builds.LoadBuildContentAsync(buildHash, buildFile, cancel);
-            if (file == null)
+            var buffer = await _builds.LoadBuildContentAsync(buildHash, buildFile, cancel);
+            if (buffer == null)
                 return NotFound();
             Response.Headers.Add(HeaderNames.ETag, buildHash);
             Response.Headers.Add(HeaderNames.CacheControl, "public,max-age=31536000");
             switch (buildFile)
             {
                 case BuildFile.MonoJs:
-                    return File(Encoding.UTF8.GetBytes(file), "application/javascript");
+                    return File(buffer, "application/javascript");
                 case BuildFile.MonoWasm:
-                    return File(Encoding.UTF8.GetBytes(file), "application/wasm");
+                    return File(buffer, "application/wasm");
                 default:
                     throw new ArgumentOutOfRangeException(nameof(buildFile), buildFile, null);
             }
@@ -160,8 +179,8 @@ namespace SideCar.AspNetCore
 		private async Task<IActionResult> ServePackageFileAsync(string packageHash, PackageFile packageFile,
 	        CancellationToken cancel)
         {
-	        var file = await _packages.LoadPackageContentAsync(packageHash, packageFile, cancel);
-	        if (file == null)
+	        var buffer = await _packages.LoadPackageContentAsync(packageHash, packageFile, cancel);
+	        if (buffer == null)
 		        return NotFound(new { Message = $"Package {packageHash} not found."});
 
 	        Response.Headers.Add(HeaderNames.ETag, packageHash);
@@ -169,9 +188,9 @@ namespace SideCar.AspNetCore
 	        switch (packageFile)
 	        {
 		        case PackageFile.MonoConfig:
-			        return File(Encoding.UTF8.GetBytes(file), "application/javascript");
+			        return File(buffer, "application/javascript");
 		        case PackageFile.RuntimeJs:
-			        return File(Encoding.UTF8.GetBytes(file), "application/javascript");
+			        return File(buffer, "application/javascript");
 		        default:
 			        throw new ArgumentOutOfRangeException(nameof(packageFile), packageFile, null);
 	        }

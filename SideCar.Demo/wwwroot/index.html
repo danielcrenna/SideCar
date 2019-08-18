@@ -1,0 +1,44 @@
+﻿<!doctype html>
+<html lang="en-us">
+<head>
+    <style>
+        body {
+            padding: 20px;
+            background-color: #ffffc9
+        }
+
+        p {
+            margin: 0;
+        }
+    </style>
+    <script defer type="text/javascript" src="mono-config.js?p=SideCar.Demo.Dependency"></script>
+    <script defer type="text/javascript" src="runtime.js?p=SideCar.Demo.Dependency"></script>
+    <script defer type="text/javascript" src="mono.js"></script>
+</head>
+<body>
+    C# output:
+    <br>
+<textarea rows="10" cols="100" id="output"></textarea>
+    <br>
+    <button type="button" onclick="App.onClick()" id="button" disabled="true">Run</button>
+    <br>
+    <div id="out"></div>
+
+    <script type='text/javascript'>
+        var App = {
+            onClick: function () {
+                this.output.value = "...";
+                var res = this.int_add(1, 2);
+                this.output.value = res;
+            },
+            init: function () {
+                this.int_add = Module.mono_bind_static_method("[SideCar.Demo.Dependency] Math:IntAdd");
+                this.button = document.getElementById("button");
+                this.output = document.getElementById ("output");
+                this.button.disabled = false;
+            }
+        };
+    </script>
+    
+</body>
+</html>

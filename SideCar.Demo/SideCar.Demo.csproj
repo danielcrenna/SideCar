@@ -24,10 +24,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="wwwroot\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\SideCar.AspNetCore\SideCar.AspNetCore.csproj" />
     <ProjectReference Include="..\SideCar.Demo.Dependency\SideCar.Demo.Dependency.csproj" />
   </ItemGroup>

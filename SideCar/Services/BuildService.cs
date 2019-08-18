@@ -57,7 +57,7 @@ namespace SideCar.Services
 			return buildHash;
 		}
 
-        public async Task<string> LoadBuildContentAsync(string buildHash, BuildFile buildFile, CancellationToken cancellationToken = default)
+        public async Task<byte[]> LoadBuildContentAsync(string buildHash, BuildFile buildFile, CancellationToken cancellationToken = default)
         {
 	        return await _store.LoadBuildContentAsync(buildHash, buildFile, cancellationToken);
         }

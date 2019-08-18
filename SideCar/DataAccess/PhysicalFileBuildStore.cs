@@ -43,7 +43,7 @@ namespace SideCar.DataAccess
 			return Task.FromResult(files);
 		}
 
-		public async Task<string> LoadBuildContentAsync(string buildHash, BuildFile buildFile, CancellationToken cancellationToken)
+		public async Task<byte[]> LoadBuildContentAsync(string buildHash, BuildFile buildFile, CancellationToken cancellationToken)
 		{
 			cancellationToken.ThrowIfCancellationRequested();
 			Directory.CreateDirectory(_options.Value.BuildLocation);
@@ -55,6 +55,8 @@ namespace SideCar.DataAccess
 				return null;
 			}
 
+			var ms = new MemoryStream();
+
 			using (var fs = File.OpenRead(filePath))
 			{
 				using (var zip = new ZipArchive(fs, ZipArchiveMode.Read, true))
@@ -65,13 +67,19 @@ namespace SideCar.DataAccess
 						{
 							case BuildFile.MonoJs:
 								if (entry.FullName == "builds/release/mono.js")
-									using (var sr = new StreamReader(entry.Open()))
-										return await sr.ReadToEndAsync();
+								{
+									var stream = entry.Open();
+									await stream.CopyToAsync(ms);
+									return ms.ToArray();
+								}
 								break;
 							case BuildFile.MonoWasm:
 								if (entry.FullName == "builds/release/mono.wasm")
-									using (var sr = new StreamReader(entry.Open()))
-										return await sr.ReadToEndAsync();
+								{
+									var stream = entry.Open();
+									await stream.CopyToAsync(ms);
+									return ms.ToArray();
+								}
 								break;
 							default:
 								continue;

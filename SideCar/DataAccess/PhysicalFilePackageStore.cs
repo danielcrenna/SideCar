@@ -65,7 +65,7 @@ namespace SideCar.DataAccess
 			return Task.FromResult(directories);
 		}
 
-		public Task<string> LoadPackageContentAsync(string packageHash, PackageFile packageFile, CancellationToken cancellationToken)
+		public Task<byte[]> LoadPackageContentAsync(string packageHash, PackageFile packageFile, CancellationToken cancellationToken)
 		{
 			cancellationToken.ThrowIfCancellationRequested();
 			Directory.CreateDirectory(_options.Value.PackageLocation);
@@ -79,18 +79,32 @@ namespace SideCar.DataAccess
 				case PackageFile.MonoConfig:
 				{
 					var fileName = Path.Combine(packagePath, "mono-config.js");
-					return !File.Exists(fileName) ? null : Task.FromResult(File.ReadAllText(fileName));
+					return !File.Exists(fileName) ? null : Task.FromResult(File.ReadAllBytes(fileName));
 				}
 				case PackageFile.RuntimeJs:
 				{
 					var fileName = Path.Combine(packagePath, "runtime.js");
-					return !File.Exists(fileName) ? null : Task.FromResult(File.ReadAllText(fileName));
+					return !File.Exists(fileName) ? null : Task.FromResult(File.ReadAllBytes(fileName));
 				}
 				default:
 					throw new ArgumentOutOfRangeException(nameof(packageFile), packageFile, null);
 			}
+		}
 
-			return null;
+		public Task<byte[]> LoadManagedLibraryAsync(string packageHash, string filename, CancellationToken cancellationToken)
+		{
+			cancellationToken.ThrowIfCancellationRequested();
+			Directory.CreateDirectory(_options.Value.PackageLocation);
+
+			var packagePath = Path.Combine(_options.Value.PackageLocation, $"mono-wasm-{packageHash}");
+			if (!Directory.Exists(packagePath))
+			{
+				_logger?.LogDebug("Could not find managed library");
+				return null;
+			}
+
+			var fileName = Path.Combine(packagePath, "managed", filename);
+			return !File.Exists(fileName) ? null : Task.FromResult(File.ReadAllBytes(fileName));
 		}
 	}
 }

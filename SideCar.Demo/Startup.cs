@@ -32,9 +32,11 @@ namespace SideCar.Demo
             }
 
             Console.WriteLine(typeof(Simple.Complex).Name);
-
-            app.UseSideCarApi();
-            app.UseMvc();
+			
+            app.UseDefaultFiles();
+			app.UseStaticFiles();
+			app.UseSideCarApi();
+			app.UseMvc();
         }
     }
 }
