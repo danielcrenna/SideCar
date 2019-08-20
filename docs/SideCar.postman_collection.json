@@ -23,7 +23,8 @@
 							"path": [
 								"mono.wasm"
 							]
-						}
+						},
+						"description": "Loads the Mono WASM binary."
 					},
 					"response": []
 				},
@@ -42,7 +43,8 @@
 							"path": [
 								"mono.js"
 							]
-						}
+						},
+						"description": "Loads the Mono WASM interop layer."
 					},
 					"response": []
 				},
@@ -74,7 +76,8 @@
 									"disabled": true
 								}
 							]
-						}
+						},
+						"description": "Creates a runtime binding module that calls `App.init()` on runtime initialization."
 					},
 					"response": []
 				},
@@ -106,7 +109,77 @@
 									"disabled": true
 								}
 							]
-						}
+						},
+						"description": "Creates a configuration JavaScript file that lists the file manifest."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Proxies",
+			"item": [
+				{
+					"name": "Get SideCar Proxy",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://localhost:5001/sidecar.js?p=SideCar.Demo.Dependency",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"sidecar.js"
+							],
+							"query": [
+								{
+									"key": "p",
+									"value": "SideCar.Demo.Dependency"
+								},
+								{
+									"key": "v",
+									"value": "",
+									"description": "Optionally specify the Mono SDK build hash used to compile the package.",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Generates a JavaScript object that handles wrapping WASM bindings to C# methods. Call `SideCar.init()` after module initialization to bind methods."
+					},
+					"response": []
+				},
+				{
+					"name": "Get TypeScript Proxy",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://localhost:5001/proxy.ts?p=SideCar.Demo.Dependency",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "5001",
+							"path": [
+								"proxy.ts"
+							],
+							"query": [
+								{
+									"key": "p",
+									"value": "SideCar.Demo.Dependency"
+								},
+								{
+									"key": "v",
+									"value": null,
+									"description": "Optionally specify the Mono SDK build hash used to compile the package.",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Generates a late-bound TypeScript proxy to provide strongly-typed access to the JavaScript proxy methods."
 					},
 					"response": []
 				}

@@ -40,9 +40,9 @@ namespace SideCar.Services
 			return await _compiler.CompilePackageAsync(assembly, buildHash, cancellationToken);
 		}
 
-		public async Task<Assembly> FindPackageAssemblyByNameAsync(string packageName, CancellationToken cancellationToken = default)
+		public async Task<Assembly> FindAssemblyByNameAsync(string packageName, CancellationToken cancellationToken = default)
 		{
-			return await _store.FindPackageAssemblyByNameAsync(packageName, cancellationToken);
+			return await _store.FindAssemblyByNameAsync(packageName, cancellationToken);
 		}
 
 		public async Task<HashSet<string>> GetAvailablePackagesAsync(CancellationToken cancellationToken = default)

@@ -18,20 +18,22 @@ namespace SideCar.DataAccess
 {
 	public class PhysicalFilePackageStore : IPackageStore
 	{
+		private readonly IAssemblyResolver _assemblies;
 		private readonly IOptionsSnapshot<SideCarOptions> _options;
 		private readonly ILogger<PhysicalFileBuildStore> _logger;
 
-		public PhysicalFilePackageStore(IOptionsSnapshot<SideCarOptions> options, ILogger<PhysicalFileBuildStore> logger)
+		public PhysicalFilePackageStore(IAssemblyResolver assemblies, IOptionsSnapshot<SideCarOptions> options, ILogger<PhysicalFileBuildStore> logger)
 		{
+			_assemblies = assemblies;
 			_options = options;
 			_logger = logger;
 		}
 
-		public Task<Assembly> FindPackageAssemblyByNameAsync(string packageName, CancellationToken cancellationToken = default)
+		public async Task<Assembly> FindAssemblyByNameAsync(string packageName, CancellationToken cancellationToken = default)
 		{
 			cancellationToken.ThrowIfCancellationRequested();
 
-			var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+			var assemblies = await _assemblies.GetRegisteredAssembliesAsync();
 			Assembly target = null;
 			foreach (var assembly in assemblies)
 			{
@@ -45,7 +47,7 @@ namespace SideCar.DataAccess
 			}
 
 			if (target != null)
-				return Task.FromResult(target);
+				return target;
 			_logger?.LogWarning("No assembly found matching package name {PackageName}", packageName);
 			return null;
 		}

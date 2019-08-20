@@ -11,17 +11,17 @@ namespace SideCar.AspNetCore
 {
 	public static class Add
 	{
-		public static IServiceCollection AddSideCarApi(this IServiceCollection services, IConfiguration config)
+		public static SideCarBuilder AddSideCarApi(this IServiceCollection services, IConfiguration config)
 		{
 			return services.AddSideCarApi(config.Bind);
 		}
 
-		public static IServiceCollection AddSideCarApi(this IServiceCollection services,
+		public static SideCarBuilder AddSideCarApi(this IServiceCollection services,
 			Action<SideCarOptions> configureAction = null)
 		{
-			services.AddSideCar(configureAction);
+			var builder = services.AddSideCar(configureAction);
 			services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
-			return services;
+			return builder;
 		}
 	}
 }

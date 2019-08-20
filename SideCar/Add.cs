@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -14,18 +15,24 @@ namespace SideCar
 {
 	public static class Add
 	{
-		public static IServiceCollection AddSideCar(this IServiceCollection services, IConfiguration config)
+		public static SideCarBuilder AddSideCar(this IServiceCollection services, IConfiguration config)
 		{
 			return services.AddSideCar(config.Bind);
 		}
 
-		public static IServiceCollection AddSideCar(this IServiceCollection services, Action<SideCarOptions> configureAction = null)
+		public static SideCarBuilder AddSideCar(this IServiceCollection services, Action<SideCarOptions> configureAction = null)
 		{
+			var resolver = new MemoryAssemblyResolver();
+
 			services.AddLogging();
 			services.AddOptions();
+			
+			services.TryAddSingleton<IAssemblyResolver, MemoryAssemblyResolver>();
 
 			services.TryAddScoped<BuildService>();
 			services.TryAddScoped<PackageService>();
+			services.TryAddScoped<ProxyService>();
+			
 			services.TryAddScoped<IBuildResolver, WebBuildResolver>();
 			services.TryAddScoped<IBuildStore, PhysicalFileBuildStore>();
 			services.TryAddScoped<IPackageCompiler, PhysicalFilePackageCompiler>();
@@ -33,7 +40,14 @@ namespace SideCar
 			
 			if (configureAction != null)
 				services.Configure(configureAction);
-			return services;
+
+			return new SideCarBuilder(resolver, services);
+		}
+
+		public static SideCarBuilder AddPackageAssembly(this SideCarBuilder builder, Assembly assembly)
+		{
+			builder.Resolver.Register(assembly);
+			return builder;
 		}
 	}
 }

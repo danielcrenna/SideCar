@@ -4,6 +4,8 @@
 using System;
 using System.Linq;
 using System.Net;
+using System.Reflection;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -19,14 +21,16 @@ namespace SideCar.AspNetCore
     {
         private readonly BuildService _builds;
         private readonly PackageService _packages;
+        private readonly ProxyService _proxies;
         private readonly ILogger<SideCarController> _logger;
 
         public CancellationToken CancellationToken => HttpContext.RequestAborted;
 
-        public SideCarController(BuildService builds, PackageService packages, ILogger<SideCarController> logger)
+        public SideCarController(BuildService builds, PackageService packages, ProxyService proxies, ILogger<SideCarController> logger)
         {
 	        _builds = builds;
 	        _packages = packages;
+	        _proxies = proxies;
 	        _logger = logger;
         }
 
@@ -44,7 +48,6 @@ namespace SideCar.AspNetCore
 	        var versions = await _packages.GetAvailablePackagesAsync(CancellationToken);
 	        return Ok(new { data = versions });
         }
-
 		
         [HttpGet("mono.js")]
         public async Task<IActionResult> GetMonoJs([FromQuery(Name = "v")] string version = null)
@@ -73,6 +76,15 @@ namespace SideCar.AspNetCore
         [HttpGet("managed/{fileName}")]
         public async Task<IActionResult> GetManagedLibrary(string fileName)
         {
+			// FIXME: duplicate code
+			if (Request.Headers.TryGetValue(HeaderNames.IfNoneMatch, out var etag))
+	        {
+		        var resources = await _packages.GetAvailablePackagesAsync(CancellationToken);
+		        foreach (var hash in etag)
+			        if (resources.Contains(hash))
+				        return StatusCode((int) HttpStatusCode.NotModified);
+	        }
+
 			// FIXME: modify configuration to pass-through the package ID in the path
 			var packageHash = (await _packages.GetAvailablePackagesAsync(CancellationToken)).LastOrDefault();
 			if (packageHash == null)
@@ -88,10 +100,23 @@ namespace SideCar.AspNetCore
 			return File(buffer, "application/octet-stream");
 		}
 
+        [HttpGet("sidecar.js")]
+        public async Task<IActionResult> GetSideCarJs([FromQuery(Name = "p")] string package = null, [FromQuery(Name = "v")] string version = null)
+        {
+	        return await TryServeProxyFile(package, ProxyFile.JavaScript, version);
+        }
+
+        [HttpGet("sidecar.ts")]
+        public async Task<IActionResult> GetTypeScriptProxy([FromQuery(Name = "p")] string package = null, [FromQuery(Name = "v")] string version = null)
+        {
+			return await TryServeProxyFile(package, ProxyFile.TypeScript, version);
+		}
+		
 		#region Build Files
 
 		private async Task<IActionResult> TryServeBuildFileAsync(BuildFile buildFile, string version = null)
         {
+			// FIXME: duplicate code
             if (Request.Headers.TryGetValue(HeaderNames.IfNoneMatch, out var etag))
             {
                 var resources = await _builds.GetAvailableBuildsAsync(CancellationToken);
@@ -144,6 +169,7 @@ namespace SideCar.AspNetCore
 	        if (string.IsNullOrWhiteSpace(package))
 		        return BadRequest(new { Message = "Package name required." });
 
+	        // FIXME: duplicate code
 			if (Request.Headers.TryGetValue(HeaderNames.IfNoneMatch, out var etag))
 			{
 				var resources = await _packages.GetAvailablePackagesAsync(CancellationToken);
@@ -152,18 +178,11 @@ namespace SideCar.AspNetCore
 						return StatusCode((int) HttpStatusCode.NotModified);
 			}
 
-			string buildHash = null;
-			if (!string.IsNullOrWhiteSpace(version))
-			{
-				buildHash = await _builds.GetBuildByVersionAsync(version, CancellationToken);
-				if (buildHash == null)
-					return NotFound(new { Message = $"Specified build {version} not found." });
-			}
-			buildHash = buildHash ?? await _builds.GetLatestStableBuildAsync(CancellationToken);
-			if (buildHash == null)
-				return NotFound(new { Message = "No builds found." });
+			var (error, buildHash) = await TryGetBuildHash(version);
+			if (error != null)
+				return error;
 
-			var assembly = await _packages.FindPackageAssemblyByNameAsync(package, CancellationToken);
+			var assembly = await _packages.FindAssemblyByNameAsync(package, CancellationToken);
 			if (assembly == null)
 				return NotFound(new { Message = $"No package assemblies found matching name '{package}." });
 
@@ -201,5 +220,85 @@ namespace SideCar.AspNetCore
         }
 
 		#endregion
+
+		#region Proxy Files
+
+		private async Task<IActionResult> TryServeProxyFile(string package, ProxyFile proxyFile, string version)
+		{
+			if (string.IsNullOrWhiteSpace(package))
+				return BadRequest(new { Message = "Package name required." });
+
+			var (error, buildHash) = await TryGetBuildHash(version);
+			if (error != null)
+				return error;
+
+			// FIXME: duplicate code
+			if (Request.Headers.TryGetValue(HeaderNames.IfNoneMatch, out var etag))
+			{
+				var resources = await _packages.GetAvailablePackagesAsync(CancellationToken);
+				foreach (var hash in etag)
+					if (resources.Contains(hash))
+						return StatusCode((int) HttpStatusCode.NotModified);
+			}
+
+			var assembly = await _packages.FindAssemblyByNameAsync(package, CancellationToken);
+			if (assembly == null)
+				return NotFound(new { Message = $"No package assemblies found matching name '{package}." });
+
+			return await ServeProxyFile(package, proxyFile, assembly, buildHash);
+		}
+
+		private async Task<IActionResult> ServeProxyFile(string package, ProxyFile proxyFile, Assembly assembly, string buildHash)
+		{
+			string proxy;
+			switch (proxyFile)
+			{
+				case ProxyFile.JavaScript:
+					proxy = await _proxies.GenerateJavaScriptProxy(package, CancellationToken);
+					break;
+				case ProxyFile.TypeScript:
+					proxy = await _proxies.GenerateTypeScriptProxy(package, CancellationToken);
+					break;
+				default:
+					throw new ArgumentOutOfRangeException(nameof(proxyFile), proxyFile, null);
+			}
+
+			Response.Headers.Add(HeaderNames.ETag, assembly.ComputePackageHash(buildHash));
+			Response.Headers.Add(HeaderNames.CacheControl, "public,max-age=31536000");
+			switch (proxyFile)
+			{
+				case ProxyFile.JavaScript:
+					return File(Encoding.UTF8.GetBytes(proxy), "application/javascript");
+				case ProxyFile.TypeScript:
+					return File(Encoding.UTF8.GetBytes(proxy), "application/typescript");
+				default:
+					throw new ArgumentOutOfRangeException(nameof(proxyFile), proxyFile, null);
+			}
+		}
+
+		#endregion
+
+		private async Task<(IActionResult, string)> TryGetBuildHash(string version)
+		{
+			string buildHash = null;
+			if (!string.IsNullOrWhiteSpace(version))
+			{
+				buildHash = await _builds.GetBuildByVersionAsync(version, CancellationToken);
+				if (buildHash == null)
+				{
+					var result = NotFound(new { Message = $"Specified build {version} not found." });
+					return (result, null);
+				}
+			}
+
+			buildHash = buildHash ?? await _builds.GetLatestStableBuildAsync(CancellationToken);
+			if (buildHash == null)
+			{
+				var result = NotFound(new {Message = "No builds found."});
+				return (result, null);
+			}
+
+			return (null, buildHash);
+		}
 	}
 }

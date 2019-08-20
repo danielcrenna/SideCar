@@ -6,7 +6,6 @@
             padding: 20px;
             background-color: #ffffc9
         }
-
         p {
             margin: 0;
         }
@@ -23,16 +22,16 @@
     <button type="button" onclick="App.onClick()" id="button" disabled="true">Run</button>
     <br>
     <div id="out"></div>
-
+    
+    <script defer type="text/javascript" src="sidecar.js?p=SideCar.Demo.Dependency"></script>
     <script type='text/javascript'>
         var App = {
             onClick: function () {
                 this.output.value = "...";
-                var res = this.int_add(1, 2);
-                this.output.value = res;
+                this.output.value = SideCar.SideCar_Demo_Dependency.Math.intAdd(1, 2);
             },
             init: function () {
-                this.int_add = Module.mono_bind_static_method("[SideCar.Demo.Dependency] Math:IntAdd");
+                SideCar.init();
                 this.button = document.getElementById("button");
                 this.output = document.getElementById ("output");
                 this.button.disabled = false;

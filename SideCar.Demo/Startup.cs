@@ -20,7 +20,8 @@ namespace SideCar.Demo
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
-	        services.AddSideCarApi(_config.GetSection("SideCar"));
+	        services.AddSideCarApi(_config.GetSection("SideCar"))
+		        .AddPackageAssembly(typeof(Simple.Complex).Assembly); // optional: used to force a reference in the app domain
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -31,8 +32,6 @@ namespace SideCar.Demo
                 app.UseDeveloperExceptionPage();
             }
 
-            Console.WriteLine(typeof(Simple.Complex).Name);
-			
             app.UseDefaultFiles();
 			app.UseStaticFiles();
 			app.UseSideCarApi();
