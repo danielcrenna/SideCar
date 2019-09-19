@@ -157,14 +157,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "https://localhost:5001/proxy.ts?p=SideCar.Demo.Dependency",
+							"raw": "https://localhost:5001/sidecar.ts?p=SideCar.Demo.Dependency",
 							"protocol": "https",
 							"host": [
 								"localhost"
 							],
 							"port": "5001",
 							"path": [
-								"proxy.ts"
+								"sidecar.ts"
 							],
 							"query": [
 								{

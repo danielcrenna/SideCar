@@ -94,7 +94,7 @@ namespace SideCar.Services
 			if (!map.TryGetValue(type, out var list))
 				map.Add(type, list = new List<MemberInfo>());
 
-			foreach (var member in AccessorMembers.Create(type, AccessorMemberScope.Public))
+			foreach (var member in AccessorMembers.Create(type, scope: AccessorMemberScope.Public))
 			{
 				switch (member.MemberType)
 				{
