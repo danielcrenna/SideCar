@@ -20,23 +20,32 @@ EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Package|Any CPU = Package|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{7498DF8B-C93A-44C1-8390-C7AE0C26A7E3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7498DF8B-C93A-44C1-8390-C7AE0C26A7E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7498DF8B-C93A-44C1-8390-C7AE0C26A7E3}.Package|Any CPU.ActiveCfg = Release|Any CPU
+		{7498DF8B-C93A-44C1-8390-C7AE0C26A7E3}.Package|Any CPU.Build.0 = Release|Any CPU
 		{7498DF8B-C93A-44C1-8390-C7AE0C26A7E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7498DF8B-C93A-44C1-8390-C7AE0C26A7E3}.Release|Any CPU.Build.0 = Release|Any CPU
 		{149E70A2-6B2C-475F-A078-342D5C1A9F7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{149E70A2-6B2C-475F-A078-342D5C1A9F7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{149E70A2-6B2C-475F-A078-342D5C1A9F7A}.Package|Any CPU.ActiveCfg = Package|Any CPU
+		{149E70A2-6B2C-475F-A078-342D5C1A9F7A}.Package|Any CPU.Build.0 = Package|Any CPU
 		{149E70A2-6B2C-475F-A078-342D5C1A9F7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{149E70A2-6B2C-475F-A078-342D5C1A9F7A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A1927412-42A6-458D-BA5C-2A99C8D9B5C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A1927412-42A6-458D-BA5C-2A99C8D9B5C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1927412-42A6-458D-BA5C-2A99C8D9B5C6}.Package|Any CPU.ActiveCfg = Package|Any CPU
+		{A1927412-42A6-458D-BA5C-2A99C8D9B5C6}.Package|Any CPU.Build.0 = Package|Any CPU
 		{A1927412-42A6-458D-BA5C-2A99C8D9B5C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A1927412-42A6-458D-BA5C-2A99C8D9B5C6}.Release|Any CPU.Build.0 = Release|Any CPU
 		{477FD663-7A22-40CF-9626-81863AAF504B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{477FD663-7A22-40CF-9626-81863AAF504B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{477FD663-7A22-40CF-9626-81863AAF504B}.Package|Any CPU.ActiveCfg = Release|Any CPU
+		{477FD663-7A22-40CF-9626-81863AAF504B}.Package|Any CPU.Build.0 = Release|Any CPU
 		{477FD663-7A22-40CF-9626-81863AAF504B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{477FD663-7A22-40CF-9626-81863AAF504B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
