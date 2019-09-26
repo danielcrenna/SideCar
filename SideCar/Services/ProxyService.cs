@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -34,12 +35,52 @@ namespace SideCar.Services
 				//sb.AppendLine();
 
 				var map = BuildTypeMap(assembly);
-				
+
+				//
+				// Polyfills:
+				{
+					sb.AppendLine("export class List<T> {");
+					sb.AppendLine("  private items: Array<T>;");
+					sb.AppendLine("  constructor()");
+					sb.AppendLine("  {");
+					sb.AppendLine("      this.items = [];");
+					sb.AppendLine("  }");
+					sb.AppendLine("  size() : number {");
+					sb.AppendLine("      return this.items.length;");
+					sb.AppendLine("  }");
+					sb.AppendLine("  add(value: T) : void {");
+					sb.AppendLine("      this.items.push(value);");
+					sb.AppendLine("  }");
+					sb.AppendLine("  get(index: number) : T {");
+					sb.AppendLine("      return this.items[index];");
+					sb.AppendLine("  }");
+					sb.AppendLine("}");
+
+					sb.AppendLine();
+					sb.AppendLine("export class Dictionary<T> {");
+					sb.AppendLine("  private items: { [key: string]: T };");
+					sb.AppendLine("  constructor()");
+					sb.AppendLine("  {");
+					sb.AppendLine("      this.items = {};");
+					sb.AppendLine("  }");
+					sb.AppendLine("  containsKey(key: string): boolean {");
+					sb.AppendLine("      return key in this.items;");
+					sb.AppendLine("  }");
+					sb.AppendLine("  add(key: string, value: T): void {");
+					sb.AppendLine("       this.items[key] = value;");
+					sb.AppendLine("  }");
+					sb.AppendLine("  get(key: string): T {");
+					sb.AppendLine("      return this.items[key];");
+					sb.AppendLine("  }");
+					sb.AppendLine("}");
+					sb.AppendLine();
+				}
+
 				//
 				// Interfaces:
 				foreach (var type in map.Keys)
 				{
-					if (type.IsClass || type.IsInterface)
+					if (CanExportType(type))
 					{
 						AppendInterface(sb, 0, type, map);
 					}
@@ -53,7 +94,7 @@ namespace SideCar.Services
 				// Forwarding Classes:
 				foreach (var type in map.Keys)
 				{
-					if (type.IsClass || type.IsInterface)
+					if (CanExportType(type))
 					{
 						AppendClass(sb, 0, packageName, type, map);
 					}
@@ -67,87 +108,131 @@ namespace SideCar.Services
 			});
 		}
 
+		private static bool CanExportType(Type type)
+		{
+			if (type.IsGenericType)
+				return false; // no generics
+
+			if (type.IsNestedPrivate)
+				return false; // no private nested types
+
+			if (type.IsAnonymous())
+				return false; // no anonymous types
+
+			if (IsSystemType(type))
+				return false; // no BCL types
+
+			if (typeof(Delegate).IsAssignableFrom(type))
+				return false; // no delegates
+
+			return type.IsClass || type.IsInterface;
+		}
+
+        private static readonly byte[][] SystemTokens = 
+        {
+	        typeof(object).Assembly.GetName().GetPublicKeyToken(),          // mscorlib
+	        typeof(Queue).Assembly.GetName().GetPublicKeyToken(),           // System.Collections;
+			typeof(Queue<object>).Assembly.GetName().GetPublicKeyToken(),   // System.Collections.Generic
+        };
+
+		private static bool IsSystemType(Type type)
+		{
+			var token = type.Assembly.GetName().GetPublicKeyToken();
+			return SystemTokens.Any(t => t.SequenceEqual(token));
+		}
+
 		private static IReadOnlyDictionary<Type, List<MemberInfo>> BuildTypeMap(Assembly assembly)
 		{
 			var map = new Dictionary<Type, List<MemberInfo>>();
+            var visited = new HashSet<Type>();
 
 			foreach (var type in assembly.GetTypes())
-				TryMapType(type, map);
+				TryMapType(type, map, visited);
 
 			return map;
 		}
 
-		private static void TryMapType(Type type, IDictionary<Type, List<MemberInfo>> map)
+		private static void TryMapType(Type type, IDictionary<Type, List<MemberInfo>> map, ISet<Type> visited)
 		{
-			if (type == null)
-				return;
-
-			if (type.IsArray)
+			while (true)
 			{
-				TryMapType(type.GetElementType(), map);
-				return;
-			}
+				if (type == null)
+					return;
 
-			if (Filtered(type))
-				return;
+				if (visited.Contains(type))
+					return;
 
-			if (!map.TryGetValue(type, out var list))
-				map.Add(type, list = new List<MemberInfo>());
+				visited.Add(type);
 
-			foreach (var member in AccessorMembers.Create(type, scope: AccessorMemberScope.Public))
-			{
-				switch (member.MemberType)
+				if (type.IsArray || type.IsByRef)
 				{
-					case AccessorMemberType.Property:
-					{
-						if (!map.ContainsKey(member.Type))
-							TryMapType(member.Type, map);
-						list.Add(member.MemberInfo);
-						break;
-					}
+					type = type.GetElementType();
+					continue;
+				}
 
-					case AccessorMemberType.Field:
+				if (Filtered(type))
+					return;
+
+				if (!map.TryGetValue(type, out var list))
+					map.Add(type, list = new List<MemberInfo>());
+
+				foreach (var member in AccessorMembers.Create(type, scope: AccessorMemberScope.Public))
+				{
+					switch (member.MemberType)
 					{
-						if (!map.ContainsKey(member.Type))
-							TryMapType(member.Type, map);
-						list.Add(member.MemberInfo);
-						break;
-					}
-					case AccessorMemberType.Method:
-					{
-						list.Add(member.MemberInfo);
-						if (member.MemberInfo is MethodInfo method)
+						case AccessorMemberType.Property:
 						{
-							foreach (var parameter in method.GetParameters())
+							if (!map.ContainsKey(member.Type))
+								TryMapType(member.Type, map, visited);
+							list.Add(member.MemberInfo);
+							break;
+						}
+
+						case AccessorMemberType.Field:
+						{
+							if (!map.ContainsKey(member.Type))
+								TryMapType(member.Type, map, visited);
+							list.Add(member.MemberInfo);
+							break;
+						}
+						case AccessorMemberType.Method:
+						{
+							list.Add(member.MemberInfo);
+							if (member.MemberInfo is MethodInfo method)
 							{
-								if (!map.ContainsKey(parameter.ParameterType))
+								foreach (var parameter in method.GetParameters())
 								{
-									TryMapType(parameter.ParameterType, map);
+									if (!map.ContainsKey(parameter.ParameterType))
+										TryMapType(parameter.ParameterType, map, visited);
 								}
 							}
-						}
-						break;
-					}
 
-					default:
-						throw new ArgumentOutOfRangeException();
+							break;
+						}
+
+						default:
+							throw new ArgumentOutOfRangeException();
+					}
 				}
+
+				break;
 			}
 		}
-		
+
 		private static bool Filtered(Type type)
 		{
 			return
-				type.IsPrimitive || type.IsAbstract ||
-				type == typeof(object) || type == typeof(void) || type == typeof(string) || type == typeof(decimal) ||
-				type == typeof(Type);
+				type.IsPrimitive || type.IsAbstract || type.IsGenericType ||
+				type == typeof(object) || type == typeof(void) || type == typeof(Type) ||
+				type == typeof(string) || type == typeof(char) || type == typeof(decimal) || 
+				type == typeof(TimeSpan) || type == typeof(DateTimeOffset) || type == typeof(DateTime) || type == typeof(Guid)
+				;
 		}
 
 		private static void AppendEnum(StringBuilder sb, int indent, Type type)
 		{
-			sb.AppendLine();
 			AppendIndent(sb, indent);
-			sb.AppendLine($"  enum {type.Name} {{");
+			sb.AppendLine($"enum {type.Name} {{");
 
 			var names = type.GetEnumNames();
 			var values = type.GetEnumValues();
@@ -165,6 +250,7 @@ namespace SideCar.Services
 
 			AppendIndent(sb, indent);
 			sb.AppendLine("}");
+			sb.AppendLine();
 		}
 
 		private static void AppendInterface(StringBuilder sb, int indent, Type type, IReadOnlyDictionary<Type, List<MemberInfo>> map)
@@ -241,15 +327,17 @@ namespace SideCar.Services
 				sb.Append(type == null ? "any" : GetTypeName(type));
 				sb.Append("[]");
 			}
-			else if (type.IsGenericType && typeof(IEnumerable<>).IsAssignableFrom(type))
+			else if (type.IsGenericType && typeof(IEnumerable<>).MakeGenericType(type.GetGenericArguments()[0]).IsAssignableFrom(type))
 			{
-				type = type.GetGenericArguments()[0];
-				sb.Append(GetTypeName(type));
-				sb.Append("[]");
+				var innerType = type.GetGenericArguments()[0];
+				if (typeof(List<>).MakeGenericType(innerType).IsAssignableFrom(type))
+					sb.Append("List<").Append(GetTypeName(innerType)).Append(">");
+				else
+					sb.Append(GetTypeName(innerType)).Append("[]");
 			}
-			else if (type.IsGenericType && type.IsValueType && typeof(Nullable<>).MakeGenericType(type).IsAssignableFrom(type))
+			else if (Nullable.GetUnderlyingType(type) != null)
 			{
-				type = type.GenericTypeArguments[0];
+				type = Nullable.GetUnderlyingType(type);
 				sb.Append(GetTypeName(type));
 				sb.Append("?");
 			}
@@ -370,6 +458,8 @@ namespace SideCar.Services
 						continue;
 					if (!map.TryGetValue(type, out var members))
 						continue;
+					if (!CanExportType(type))
+						continue;
 
 					var emit = false;
 					foreach (var member in members)
@@ -395,7 +485,18 @@ namespace SideCar.Services
 						if (!method.IsStatic)
 							continue;
 
-						AppendIndent(sb, 3);
+						var canExportMethod = true;
+                        foreach(var parameter in method.GetParameters())
+	                        if (!map.ContainsKey(parameter.ParameterType))
+	                        {
+		                        canExportMethod = false;
+		                        break;
+	                        }
+
+                        if (!canExportMethod)
+	                        continue;
+
+                        AppendIndent(sb, 3);
 						sb.Append("function (");
 						var parameters = method.GetParameters();
 						for (var i = 0; i < parameters.Length; i++)
@@ -444,6 +545,8 @@ namespace SideCar.Services
 					if (!type.IsClass)
 						continue;
 					if (!map.TryGetValue(type, out var members))
+						continue;
+					if (!CanExportType(type))
 						continue;
 
 					var className = GetTypeName(type);
