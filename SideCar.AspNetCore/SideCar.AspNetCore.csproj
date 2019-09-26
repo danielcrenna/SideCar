@@ -14,7 +14,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IncludeSymbols>true</IncludeSymbols>
     <PackageId>SideCar.AspNetCore</PackageId>
-    <PackageVersion>1.0.4</PackageVersion>
+    <PackageVersion>1.0.6</PackageVersion>
     <Description>A side loader for creating WASM from C# libraries. Adds support for ASP.NET Core.</Description>
     <IsPackable>true</IsPackable>
     <PackageProjectUrl>https://github.com/danielcrenna/SideCar</PackageProjectUrl>

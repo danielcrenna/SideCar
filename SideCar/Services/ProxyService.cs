@@ -389,6 +389,9 @@ namespace SideCar.Services
 
 		private static string GetTypeName(Type type)
 		{
+			if (type.IsByRef)
+				type = type.GetElementType();
+
 			if (type == typeof(object))
 				return "any";
 
