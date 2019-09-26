@@ -70,6 +70,8 @@ namespace SideCar.DataAccess
 			return Task.FromResult(directories);
 		}
 
+		private static readonly byte[] NoContent = new byte[0];
+
 		public Task<byte[]> LoadPackageContentAsync(string packageHash, PackageFile packageFile, CancellationToken cancellationToken)
 		{
 			cancellationToken.ThrowIfCancellationRequested();
@@ -77,19 +79,21 @@ namespace SideCar.DataAccess
 
 			var packagePath = Path.Combine(_options.Value.PackageLocation, $"mono-wasm-{packageHash}");
 			if (!Directory.Exists(packagePath))
-				return null;
+				return Task.FromResult(NoContent);
 
 			switch (packageFile)
 			{
 				case PackageFile.MonoConfig:
 				{
 					var fileName = Path.Combine(packagePath, "mono-config.js");
-					return !File.Exists(fileName) ? null : Task.FromResult(File.ReadAllBytes(fileName));
+					var file = Task.FromResult(!File.Exists(fileName) ? NoContent : File.ReadAllBytes(fileName));
+					return file;
 				}
 				case PackageFile.RuntimeJs:
 				{
 					var fileName = Path.Combine(packagePath, "runtime.js");
-					return !File.Exists(fileName) ? null : Task.FromResult(File.ReadAllBytes(fileName));
+					var file = Task.FromResult(!File.Exists(fileName) ? NoContent : File.ReadAllBytes(fileName));
+					return file;
 				}
 				default:
 					throw new ArgumentOutOfRangeException(nameof(packageFile), packageFile, null);

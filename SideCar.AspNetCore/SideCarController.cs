@@ -190,7 +190,11 @@ namespace SideCar.AspNetCore
 
 			var packages = await _packages.GetAvailablePackagesAsync(CancellationToken);
 			if (packages.Contains(packageHash))
-				return await ServePackageFileAsync(packageHash, packageFile, CancellationToken);
+			{
+				var file = await ServePackageFileAsync(packageHash, packageFile, CancellationToken);
+				if (!(file is NotFoundObjectResult))
+					return file; // try to re-compile if we ran into an issue earlier
+			}
 
 			var result = await _packages.CompilePackageAsync(assembly, buildHash, CancellationToken);
 			if (!result.Successful)
@@ -203,8 +207,10 @@ namespace SideCar.AspNetCore
 	        CancellationToken cancel)
         {
 	        var buffer = await _packages.LoadPackageContentAsync(packageHash, packageFile, cancel);
-	        if (buffer == null)
-		        return NotFound(new { Message = $"Package {packageHash} not found."});
+	        if (buffer == null || buffer.Length == 0)
+	        {
+		        return NotFound(new { Message = $"Package file {packageFile} for package {packageHash} not found."});
+	        }
 
 	        Response.Headers.Add(HeaderNames.ETag, packageHash);
 	        Response.Headers.Add(HeaderNames.CacheControl, "public,max-age=31536000");

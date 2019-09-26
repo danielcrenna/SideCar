@@ -35,9 +35,13 @@ namespace SideCar.DataAccess
 			try
 			{
 				var packageHash = assembly.ComputePackageHash(buildHash);
-
 				var sdkDir = Path.GetFullPath(Path.Combine(_options.Value.BuildLocation, $"mono-wasm-{buildHash}"));
-				var assemblyDir = Path.GetDirectoryName(assembly.Location);
+				var assemblyLocation = assembly.Location;
+
+				var assemblyDir = Path.GetDirectoryName(assemblyLocation);
+                if(string.IsNullOrWhiteSpace(assemblyDir))
+                    throw new DirectoryNotFoundException(assemblyDir);
+
 				var outputDir = Path.GetFullPath(Path.Combine(_options.Value.PackageLocation, $"mono-wasm-{packageHash}"));
 				Directory.CreateDirectory(outputDir);
 				Directory.CreateDirectory(_options.Value.PackageLocation);
@@ -47,7 +51,10 @@ namespace SideCar.DataAccess
 				sb.Append($" --mono-sdkdir=\"{sdkDir}\"");      // Set the mono sdk directory to 'x'
 				sb.Append($" --copy=always");                   // Set the type of copy to perform (always|ifnewest)
 				sb.Append($" --out=\"{outputDir}\"");           // Set the output directory to 'x' (default to the current directory)
-				sb.Append($" \"{assembly.Location}\"");         // Include {target}.dll as one of the root assemblies
+				sb.Append($" \"{assemblyLocation}\"");          // Include {target}.dll as one of the root assemblies
+
+                ShadowCopyReferencesRecursive(assembly, assemblyDir);
+
 				var args = sb.ToString();
 
 				var fileName = Path.Combine(sdkDir, "packager.exe");
@@ -65,7 +72,7 @@ namespace SideCar.DataAccess
 				_logger?.LogDebug("Compiling package {PackageHash}", packageHash);
 				_logger?.LogDebug("-------------------------------", packageHash);
 				_logger?.LogDebug("SDK Location: {SdkDir}", sdkDir);
-				_logger?.LogDebug("Assembly Location: {AssemblyLocation}", assembly.Location);
+				_logger?.LogDebug("Assembly Location: {AssemblyLocation}", assemblyLocation);
 				_logger?.LogDebug("Output Location: {OutputLocation}", outputDir);
 				_logger?.LogDebug("-------------------------------", packageHash);
 				_logger?.LogDebug("{Command}", $"packager.exe {args}");
@@ -93,6 +100,24 @@ namespace SideCar.DataAccess
 			finally
 			{
 				Semaphore.Release();
+			}
+		}
+
+		private static void ShadowCopyReferencesRecursive(Assembly assembly, string assemblyDir)
+		{
+			foreach (var assemblyRef in assembly.GetReferencedAssemblies())
+			{
+				if (assemblyRef.Name == "netstandard")
+					continue;
+				var reference = Assembly.Load(assemblyRef);
+
+				var referenceInfo = new FileInfo(reference.Location);
+				var targetFile = Path.Combine(assemblyDir, Path.GetFileName(reference.Location));
+				var targetFileInfo = new FileInfo(targetFile);
+				if (!targetFileInfo.Exists || targetFileInfo.LastWriteTimeUtc < referenceInfo.LastWriteTimeUtc)
+					File.Copy(reference.Location, targetFile, true);
+
+				ShadowCopyReferencesRecursive(reference, assemblyDir);
 			}
 		}
 	}

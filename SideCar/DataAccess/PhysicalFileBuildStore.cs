@@ -116,7 +116,7 @@ namespace SideCar.DataAccess
 			}
 			catch (Exception e)
 			{
-				_logger?.LogError(e, "Failed to provided {BuildHash}", buildHash);
+				_logger?.LogError(e, "Failed to provision {BuildHash}", buildHash);
 				return Task.FromResult(false);
 			}
 		}
