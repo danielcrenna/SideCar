@@ -14,7 +14,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IncludeSymbols>true</IncludeSymbols>
     <PackageId>SideCar</PackageId>
-    <PackageVersion>1.0.1</PackageVersion>
+    <PackageVersion>1.0.3</PackageVersion>
     <Description>A side loader for creating WASM from C# libraries.</Description>
     <IsPackable>true</IsPackable>
     <PackageProjectUrl>https://github.com/danielcrenna/SideCar</PackageProjectUrl>
