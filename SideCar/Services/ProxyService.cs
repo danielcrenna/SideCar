@@ -222,11 +222,16 @@ namespace SideCar.Services
 		private static bool Filtered(Type type)
 		{
 			return
-				type.IsPrimitive || type.IsAbstract || type.IsGenericType ||
+				type.IsPrimitive || type.IsAbstract && IsStatic(type) && type.IsGenericType ||
 				type == typeof(object) || type == typeof(void) || type == typeof(Type) ||
 				type == typeof(string) || type == typeof(char) || type == typeof(decimal) || 
 				type == typeof(TimeSpan) || type == typeof(DateTimeOffset) || type == typeof(DateTime) || type == typeof(Guid)
 				;
+		}
+
+		private static bool IsStatic(Type type)
+		{
+			return type.IsAbstract && type.IsSealed;
 		}
 
 		private static void AppendEnum(StringBuilder sb, int indent, Type type)
