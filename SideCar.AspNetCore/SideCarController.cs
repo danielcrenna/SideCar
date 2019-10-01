@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
@@ -49,31 +50,31 @@ namespace SideCar.AspNetCore
 	        return Ok(new { data = versions });
         }
 		
-        [HttpGet("mono.js")]
+        [HttpGet("mono.js"), AllowAnonymous]
         public async Task<IActionResult> GetMonoJs([FromQuery(Name = "v")] string version = null)
         {
             return await TryServeBuildFileAsync(BuildFile.MonoJs, version);
         }
 
-        [HttpGet("mono.wasm")]
+        [HttpGet("mono.wasm"), AllowAnonymous]
         public async Task<IActionResult> GetMonoWasm([FromQuery(Name = "v")] string version = null)
         {
             return await TryServeBuildFileAsync(BuildFile.MonoWasm, version);
         }
 
-        [HttpGet("runtime.js")]
+        [HttpGet("runtime.js"), AllowAnonymous]
         public async Task<IActionResult> GetRuntime([FromQuery(Name = "p")] string package, [FromQuery(Name = "v")] string version = null)
         {
 	        return await TryServePackageFileAsync(package, PackageFile.RuntimeJs, version);
 		}
 
-        [HttpGet("mono-config.js")]
+        [HttpGet("mono-config.js"), AllowAnonymous]
         public async Task<IActionResult> GetMonoConfig([FromQuery(Name = "p")] string package, [FromQuery(Name = "v")] string version = null)
         {
 			return await TryServePackageFileAsync(package, PackageFile.MonoConfig, version);
         }
 
-        [HttpGet("managed/{fileName}")]
+        [HttpGet("managed/{fileName}"), AllowAnonymous]
         public async Task<IActionResult> GetManagedLibrary(string fileName)
         {
 			// FIXME: duplicate code
@@ -100,13 +101,13 @@ namespace SideCar.AspNetCore
 			return File(buffer, "application/octet-stream");
 		}
 
-        [HttpGet("sidecar.js")]
+        [HttpGet("sidecar.js"), AllowAnonymous]
         public async Task<IActionResult> GetSideCarJs([FromQuery(Name = "p")] string package = null, [FromQuery(Name = "v")] string version = null)
         {
 	        return await TryServeProxyFile(package, ProxyFile.JavaScript, version);
         }
 
-        [HttpGet("sidecar.ts")]
+        [HttpGet("sidecar.ts"), AllowAnonymous]
         public async Task<IActionResult> GetTypeScriptProxy([FromQuery(Name = "p")] string package = null, [FromQuery(Name = "v")] string version = null)
         {
 			return await TryServeProxyFile(package, ProxyFile.TypeScript, version);
