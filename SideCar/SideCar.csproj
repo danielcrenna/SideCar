@@ -14,7 +14,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IncludeSymbols>true</IncludeSymbols>
     <PackageId>SideCar</PackageId>
-    <PackageVersion>1.0.8</PackageVersion>
+    <PackageVersion>1.0.12</PackageVersion>
     <Description>A side loader for creating WASM from C# libraries.</Description>
     <IsPackable>true</IsPackable>
     <PackageProjectUrl>https://github.com/danielcrenna/SideCar</PackageProjectUrl>
@@ -30,6 +30,10 @@
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="3.0.0" />
     <PackageReference Include="Mono.Cecil" Version="0.11.0" />
     <PackageReference Include="TypeKitchen" Version="1.0.17" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="polyfills.ts" />
   </ItemGroup>
 
   <Target Name="PublishBinariesToNuGet" AfterTargets="Pack" Condition="'$(Configuration)'=='Package'">

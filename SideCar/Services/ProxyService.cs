@@ -4,6 +4,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -31,49 +32,16 @@ namespace SideCar.Services
 
 			return Pooling.StringBuilderPool.Scoped(sb =>
 			{
-				//sb.AppendLine($"declare module \"{packageName}\" {{");
-				//sb.AppendLine();
-
 				var map = BuildTypeMap(assembly);
 
-				//
-				// Polyfills:
+				using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("SideCar.polyfills.ts"))
 				{
-					sb.AppendLine("export class List<T> {");
-					sb.AppendLine("  private items: Array<T>;");
-					sb.AppendLine("  constructor()");
-					sb.AppendLine("  {");
-					sb.AppendLine("      this.items = [];");
-					sb.AppendLine("  }");
-					sb.AppendLine("  size() : number {");
-					sb.AppendLine("      return this.items.length;");
-					sb.AppendLine("  }");
-					sb.AppendLine("  add(value: T) : void {");
-					sb.AppendLine("      this.items.push(value);");
-					sb.AppendLine("  }");
-					sb.AppendLine("  get(index: number) : T {");
-					sb.AppendLine("      return this.items[index];");
-					sb.AppendLine("  }");
-					sb.AppendLine("}");
-
-					sb.AppendLine();
-					sb.AppendLine("export class Dictionary<T> {");
-					sb.AppendLine("  private items: { [key: string]: T };");
-					sb.AppendLine("  constructor()");
-					sb.AppendLine("  {");
-					sb.AppendLine("      this.items = {};");
-					sb.AppendLine("  }");
-					sb.AppendLine("  containsKey(key: string): boolean {");
-					sb.AppendLine("      return key in this.items;");
-					sb.AppendLine("  }");
-					sb.AppendLine("  add(key: string, value: T): void {");
-					sb.AppendLine("       this.items[key] = value;");
-					sb.AppendLine("  }");
-					sb.AppendLine("  get(key: string): T {");
-					sb.AppendLine("      return this.items[key];");
-					sb.AppendLine("  }");
-					sb.AppendLine("}");
-					sb.AppendLine();
+					if (stream != null)
+						using (var reader = new StreamReader(stream))
+						{
+							var polyfills = reader.ReadToEnd();
+							sb.AppendLine(polyfills);
+						}
 				}
 
 				//
@@ -103,8 +71,6 @@ namespace SideCar.Services
 						AppendEnum(sb, 0, type);
 					}
 				}
-
-				// sb.AppendLine("}"); // module
 			});
 		}
 
@@ -195,6 +161,7 @@ namespace SideCar.Services
 							list.Add(member.MemberInfo);
 							break;
 						}
+
 						case AccessorMemberType.Method:
 						{
 							list.Add(member.MemberInfo);
@@ -221,17 +188,22 @@ namespace SideCar.Services
 
 		private static bool Filtered(Type type)
 		{
-			return
-				type.IsPrimitive || type.IsAbstract && IsStatic(type) && type.IsGenericType ||
-				type == typeof(object) || type == typeof(void) || type == typeof(Type) ||
-				type == typeof(string) || type == typeof(char) || type == typeof(decimal) || 
-				type == typeof(TimeSpan) || type == typeof(DateTimeOffset) || type == typeof(DateTime) || type == typeof(Guid)
-				;
-		}
+			if (type.HasAttribute<NonSerializedAttribute>())
+				return true; // excluded explicitly
 
-		private static bool IsStatic(Type type)
-		{
-			return type.IsAbstract && type.IsSealed;
+			if (type.IsAbstract && !type.IsSealed)
+				return true; // exclude abstract (but not static) classes
+
+			if (type == typeof(DateTimeOffset) || type == typeof(DateTime) || type == typeof(Guid))
+				return true; // types that we don't have a polyfill for
+
+			if (type.IsPrimitive || type == typeof(void) || type == typeof(string) || type == typeof(decimal))
+				return true; // does not require primitives (use JS primitives)
+
+			if (type == typeof(object) || type == typeof(Type))
+				return true; // remove unhelpful types
+
+			return false;
 		}
 
 		private static void AppendEnum(StringBuilder sb, int indent, Type type)
@@ -357,9 +329,13 @@ namespace SideCar.Services
 		private static void AppendMethodForwarder(StringBuilder sb, int indent, string packageName, Type type, MethodInfo method)
 		{
 			if (method.Name.StartsWith("get_") || method.Name.StartsWith("set_"))
-				return;
+				return; // ignore property forwarding methods
+
 			if (method.DeclaringType == typeof(object))
-				return;
+				return; // ignore base class members
+
+			if (typeof(Delegate).IsAssignableFrom(method.ReturnType))
+				return; // ignore methods that return VT types
 
 			var methodName = method.Name.ToCamelCase();
 			var parameters = method.GetParameters();
@@ -434,7 +410,7 @@ namespace SideCar.Services
 				return "void";
 
 			if (type != typeof(IDictionary<,>))
-				return type.Name;
+				return type?.Name;
 
 			var key = GetTypeName(type.GenericTypeArguments[0]);
 			var value = GetTypeName(type.GenericTypeArguments[1]);
@@ -486,25 +462,27 @@ namespace SideCar.Services
 
 					AppendIndent(sb, 2);
 					sb.AppendLine($"{className}: {{");
-					foreach (var member in members)
+					for (var m = 0; m < members.Count; m++)
 					{
+						var member = members[m];
+
 						if (!(member is MethodInfo method))
 							continue;
 						if (!method.IsStatic)
 							continue;
 
 						var canExportMethod = true;
-                        foreach(var parameter in method.GetParameters())
-	                        if (!map.ContainsKey(parameter.ParameterType))
-	                        {
-		                        canExportMethod = false;
-		                        break;
-	                        }
+						foreach (var parameter in method.GetParameters())
+							if (!map.ContainsKey(parameter.ParameterType))
+							{
+								canExportMethod = false;
+								break;
+							}
 
-                        if (!canExportMethod)
-	                        continue;
+						if (!canExportMethod)
+							continue;
 
-                        AppendIndent(sb, 3);
+						AppendIndent(sb, 3);
 						sb.Append("function (");
 						var parameters = method.GetParameters();
 						for (var i = 0; i < parameters.Length; i++)
@@ -514,6 +492,7 @@ namespace SideCar.Services
 							var parameterName = parameters[i].Name.ToCamelCase();
 							sb.Append(parameterName);
 						}
+
 						sb.AppendLine(") {");
 
 						AppendIndent(sb, 4);
@@ -528,21 +507,19 @@ namespace SideCar.Services
 							var parameterName = parameters[i].Name.ToCamelCase();
 							sb.Append(parameterName);
 						}
-						sb.AppendLine(");"); // function call
 
+						sb.AppendLine(");"); // function call
 						AppendIndent(sb, 3);
-						sb.AppendLine("}"); // function
+						sb.AppendLine(m < members.Count - 1 ? "}," : "}"); // function
 					}
 
 					AppendIndent(sb, 2);
-					sb.AppendLine("}"); // class
+					sb.AppendLine(count < map.Count - 1 ? "}," : "}");
 					count++;
-					if(count < map.Count -1)
-						sb.AppendLine();
 				}
 
 				AppendIndent(sb, 1);
-				sb.AppendLine($"}},"); // ns
+				sb.AppendLine("},"); // ns
 
 				//
 				// Init:
@@ -561,13 +538,17 @@ namespace SideCar.Services
 					foreach (var member in members)
 					{
 						if (!(member is MethodInfo method))
-							continue;
+							continue; // not a method
 						if (!method.IsStatic)
-							continue;
-						var methodName = method.Name.ToCamelCase();
+							continue; // not static
+						if (method.ReturnType.IsGenericType)
+							continue; // mono.js throws "can't handle VT arguments" for generics
 
+						var methodName = method.Name.ToCamelCase();
 						AppendIndent(sb, 2);
-						sb.AppendLine($"this.{ns}.{className}.{methodName} = Module.mono_bind_static_method(\"[{packageName}] {type.Name}:{method.Name}\");");
+
+						var typeNs = type.Namespace == null ? string.Empty : $"{type.Namespace}.";
+						sb.AppendLine($"this.{ns}.{className}.{methodName} = Module.mono_bind_static_method(\"[{packageName}] {typeNs}{type.Name}:{method.Name}\");");
 					}
 				}
 

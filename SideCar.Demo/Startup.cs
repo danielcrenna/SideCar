@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using SideCar.AspNetCore;
 
 namespace SideCar.Demo
@@ -27,7 +28,7 @@ namespace SideCar.Demo
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {
@@ -37,7 +38,8 @@ namespace SideCar.Demo
             app.UseDefaultFiles();
 			app.UseStaticFiles();
 			app.UseSideCarApi();
-			app.UseMvc();
+			app.UseRouting();
+			app.UseEndpoints(endpoints => endpoints.MapControllers());
         }
     }
 }
