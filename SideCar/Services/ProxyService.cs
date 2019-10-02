@@ -188,8 +188,8 @@ namespace SideCar.Services
 
 		private static bool Filtered(Type type)
 		{
-			if (type.HasAttribute<NonSerializedAttribute>())
-				return true; // excluded explicitly
+			if (!type.IsPublic)
+				return true; // exclude internals
 
 			if (type.IsAbstract && !type.IsSealed)
 				return true; // exclude abstract (but not static) classes
@@ -467,9 +467,11 @@ namespace SideCar.Services
 						var member = members[m];
 
 						if (!(member is MethodInfo method))
-							continue;
+							continue; // not a method
 						if (!method.IsStatic)
-							continue;
+							continue; // not static
+						if (method.ReturnType.IsGenericType)
+							continue; // mono.js throws "can't handle VT arguments" for generics
 
 						var canExportMethod = true;
 						foreach (var parameter in method.GetParameters())
@@ -510,7 +512,7 @@ namespace SideCar.Services
 
 						sb.AppendLine(");"); // function call
 						AppendIndent(sb, 3);
-						sb.AppendLine(m < members.Count - 1 ? "}," : "}"); // function
+						sb.AppendLine(m > 0 ? "}," : "}"); // function
 					}
 
 					AppendIndent(sb, 2);

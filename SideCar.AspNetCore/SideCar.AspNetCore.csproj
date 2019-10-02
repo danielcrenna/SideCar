@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;netcoreapp3.0</TargetFrameworks>
     <LangVersion>7.3</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
@@ -14,7 +14,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IncludeSymbols>true</IncludeSymbols>
     <PackageId>SideCar.AspNetCore</PackageId>
-    <PackageVersion>1.0.12</PackageVersion>
+    <PackageVersion>1.0.14</PackageVersion>
     <Description>A side loader for creating WASM from C# libraries. Adds support for ASP.NET Core.</Description>
     <IsPackable>true</IsPackable>
     <PackageProjectUrl>https://github.com/danielcrenna/SideCar</PackageProjectUrl>
@@ -23,12 +23,21 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\SideCar\SideCar.csproj" />
   </ItemGroup>
+
+  <Choose>
+    <When Condition="'$(TargetFramework)' == 'netstandard2.0'">
+      <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
 
   <Target Name="PublishBinariesToNuGet" AfterTargets="Pack" Condition="'$(Configuration)'=='Package'">
     <Exec Command="dotnet nuget push &quot;$(TargetDir)..\$(PackageId).$(PackageVersion).nupkg&quot; -s https://www.nuget.org/api/v2/package" />

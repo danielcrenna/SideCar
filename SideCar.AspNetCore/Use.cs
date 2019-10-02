@@ -9,7 +9,9 @@ namespace SideCar.AspNetCore
 	{
 		public static IApplicationBuilder UseSideCarApi(this IApplicationBuilder app)
 		{
+#if NETSTANDARD2_0
 			app.UseMvc();
+#endif
 			return app;
 		}
 	}
