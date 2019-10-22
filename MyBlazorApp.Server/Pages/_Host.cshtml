@@ -1,0 +1,34 @@
+﻿@page "/"
+@using Microsoft.Extensions.Options
+@using MyBlazorApp
+@using SideCar.Blazor
+@inject IOptionsSnapshot<SideCarOptions> Options;
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MyBlazorApp</title>
+    <base href="~/" />
+    <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
+    <link href="css/site.css" rel="stylesheet" />
+</head>
+<body>
+<app>
+    @(await Html.RenderComponentAsync<App>(RenderMode.ServerPrerendered))
+</app>
+@switch (Options.Value.RunAt)
+{
+    case RunAt.Server:
+        <script src="_framework/blazor.server.js"></script>
+        break;
+    case RunAt.Client:
+        <script src="_framework/blazor.webassembly.js"></script>
+        break;
+    default:
+        throw new ArgumentOutOfRangeException();
+}
+</body>
+</html>
