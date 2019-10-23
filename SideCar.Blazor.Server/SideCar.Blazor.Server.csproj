@@ -11,8 +11,4 @@
     <PackageReference Include="Microsoft.AspNetCore.Blazor.Server" Version="3.0.0-preview9.19465.2" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\SideCar.Blazor\SideCar.Blazor.csproj" />
-  </ItemGroup>
-
 </Project>

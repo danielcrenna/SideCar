@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using MyBlazorApp.Models;
 using SideCar.Blazor;
+using SideCar.Blazor.Server;
 
 namespace MyBlazorApp.Server.Controllers
 {

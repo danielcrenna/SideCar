@@ -20,9 +20,6 @@ namespace MyBlazorApp.Server
         {
             services.AddMvc()
 	            .SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
-
-			services.AddSideCarApi(o => { })
-				.AddPackageAssembly(typeof(Simple.Complex).Assembly);
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

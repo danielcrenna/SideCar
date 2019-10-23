@@ -15,7 +15,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SideCar.Blazor\SideCar.Blazor.csproj" />
     <ProjectReference Include="..\SideCar.Demo.Dependency\SideCar.Demo.Dependency.csproj" />
   </ItemGroup>
 
