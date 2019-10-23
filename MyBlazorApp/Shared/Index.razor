@@ -1,0 +1,31 @@
+﻿@page "/"
+@inject IJSRuntime Js
+@using M = SideCar.Demo.Dependency.Math
+
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+
+<p>
+    <button @onclick="@OnClick">Call method</button>
+</p>
+
+<br/>
+
+<p>Output: @Result</p>
+
+@code {
+
+    [Parameter] public string Result { get; set; } = "...";
+
+    public void OnClick()
+    {
+        var number = M.IntAdd(3, 6);
+        Result = number.ToString();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+    }
+}

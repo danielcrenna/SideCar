@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MyBlazorApp\MyBlazorApp.csproj" />
+    <ProjectReference Include="..\SideCar.AspNetCore\SideCar.AspNetCore.csproj" />
     <ProjectReference Include="..\SideCar.Blazor.Server\SideCar.Blazor.Server.csproj" />
   </ItemGroup>
 

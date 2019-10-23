@@ -13,4 +13,9 @@
     <PackageReference Include="Microsoft.AspNetCore.Blazor.HttpClient" Version="3.0.0-preview9.19465.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\SideCar.Blazor\SideCar.Blazor.csproj" />
+    <ProjectReference Include="..\SideCar.Demo.Dependency\SideCar.Demo.Dependency.csproj" />
+  </ItemGroup>
+
 </Project>

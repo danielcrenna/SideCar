@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Mime;
@@ -37,7 +38,10 @@ namespace SideCar.Blazor.Server
 			var options = new SideCarOptions();
 			configureAction.Bind(options);
 
-			services.AddServerSideBlazor();
+			services.AddServerSideBlazor(o =>
+			{
+				o.DetailedErrors = Debugger.IsAttached;
+			});
 
 			switch (options.RunAt)
 			{
@@ -47,8 +51,7 @@ namespace SideCar.Blazor.Server
 					break;
 				case RunAt.Client:
 					// IMPORTANT: This is required if we make calls with an HttpClient outside of a component with a @page directive
-					services.AddScoped(s =>
-						new HttpClient {BaseAddress = new Uri(s.GetRequiredService<NavigationManager>().BaseUri)});
+					services.AddScoped(s => new HttpClient {BaseAddress = new Uri(s.GetRequiredService<NavigationManager>().BaseUri)});
 					services.AddResponseCompression(o =>
 					{
 						var @default = ResponseCompressionDefaults.MimeTypes;

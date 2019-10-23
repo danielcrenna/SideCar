@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using SideCar;
+using SideCar.AspNetCore;
 
 namespace MyBlazorApp.Server
 {
@@ -15,7 +18,11 @@ namespace MyBlazorApp.Server
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc().AddNewtonsoftJson();
+            services.AddMvc()
+	            .SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
+
+			services.AddSideCarApi(o => { })
+				.AddPackageAssembly(typeof(Simple.Complex).Assembly);
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

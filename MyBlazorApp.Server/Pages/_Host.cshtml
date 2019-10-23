@@ -2,7 +2,7 @@
 @using Microsoft.Extensions.Options
 @using MyBlazorApp
 @using SideCar.Blazor
-@inject IOptionsSnapshot<SideCarOptions> Options;
+@inject IOptionsSnapshot<SideCarOptions> Options
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 
 <!DOCTYPE html>
@@ -22,10 +22,10 @@
 @switch (Options.Value.RunAt)
 {
     case RunAt.Server:
-        <script src="_framework/blazor.server.js"></script>
+<script src="_framework/blazor.server.js"></script>
         break;
     case RunAt.Client:
-        <script src="_framework/blazor.webassembly.js"></script>
+<script src="_framework/blazor.webassembly.js"></script>
         break;
     default:
         throw new ArgumentOutOfRangeException();
