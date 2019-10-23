@@ -3,14 +3,13 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using SideCar;
-using SideCar.AspNetCore;
 
 namespace MyBlazorApp.Server
 {
     public class ServerStartup
     {
         private readonly IConfiguration _configuration;
+
         public ServerStartup(IConfiguration configuration)
         {
             _configuration = configuration;

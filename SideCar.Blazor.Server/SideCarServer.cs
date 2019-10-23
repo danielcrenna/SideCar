@@ -10,25 +10,28 @@ namespace SideCar.Blazor.Server
 {
 	public static class SideCarServer
 	{
-		public static void Bootstrap<TClientStartup, TServerStartup>(string[] args) where TServerStartup : class
+		public static void HybridApp<TClientStartup, TServerStartup>(string[] args) where TServerStartup : class
 		{
+			var serverAppName = Assembly.GetCallingAssembly().GetName().Name;
+
 			var builder = WebHost.CreateDefaultBuilder(args);
+
+			builder.ConfigureServices(services =>
+			{
+				services.AddSingleton<SideCarService>();
+			});
+
+			builder.ConfigureAppConfiguration((context, _) =>
+			{
+				context.HostingEnvironment.ApplicationName = serverAppName;
+			});
+
 			builder.UseStaticWebAssets();
+			
+			var webHost = builder.UseStartup<SideCarStartup<TClientStartup, TServerStartup>>()
+				.Build();
 
-			var appName = Assembly.GetCallingAssembly().GetName().Name;
-
-			builder
-				.ConfigureServices(services =>
-				{
-					services.AddSingleton<SideCarService>();
-				})
-				.ConfigureAppConfiguration((context, _) =>
-				{
-					context.HostingEnvironment.ApplicationName = appName;
-				})
-				.UseStartup<SideCarStartup<TClientStartup, TServerStartup>>()
-				.Build()
-				.Run();
+			webHost.Run();
 		}
 	}
 }

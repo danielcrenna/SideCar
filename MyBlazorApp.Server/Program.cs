@@ -6,7 +6,7 @@ namespace MyBlazorApp.Server
     {
         public static void Main(string[] args)
         {
-            SideCarServer.Bootstrap<ClientStartup, ServerStartup>(args);
+            SideCarServer.HybridApp<ClientStartup, ServerStartup>(args);
         }
     }
 }
