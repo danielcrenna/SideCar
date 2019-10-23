@@ -4,6 +4,7 @@
 using System.Reflection;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace SideCar.Blazor.Server
 {
@@ -17,6 +18,10 @@ namespace SideCar.Blazor.Server
 			var appName = Assembly.GetCallingAssembly().GetName().Name;
 
 			builder
+				.ConfigureServices(services =>
+				{
+					services.AddSingleton<SideCarService>();
+				})
 				.ConfigureAppConfiguration((context, _) =>
 				{
 					context.HostingEnvironment.ApplicationName = appName;

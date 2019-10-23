@@ -1,10 +1,4 @@
 ﻿@page "/"
-@using Microsoft.Extensions.Options
-@using MyBlazorApp
-@using SideCar.Blazor
-@inject IOptionsSnapshot<SideCarOptions> Options
-@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,19 +10,6 @@
     <link href="css/site.css" rel="stylesheet" />
 </head>
 <body>
-<app>
-    @(await Html.RenderComponentAsync<App>(RenderMode.ServerPrerendered))
-</app>
-@switch (Options.Value.RunAt)
-{
-    case RunAt.Server:
-<script src="_framework/blazor.server.js"></script>
-        break;
-    case RunAt.Client:
-<script src="_framework/blazor.webassembly.js"></script>
-        break;
-    default:
-        throw new ArgumentOutOfRangeException();
-}
+<sidecar type="typeof(App)" renderMode="ServerPrerendered" />
 </body>
 </html>
