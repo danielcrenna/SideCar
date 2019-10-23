@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Razor;Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MyBlazorApp.Shared\MyBlazorApp.Shared.csproj" />
     <ProjectReference Include="..\SideCar.Demo.Dependency\SideCar.Demo.Dependency.csproj" />
   </ItemGroup>
 

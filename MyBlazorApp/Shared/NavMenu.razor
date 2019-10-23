@@ -29,6 +29,7 @@
 </div>
 
 @code {
+
     bool collapseNavMenu = true;
 
     string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
@@ -38,10 +39,16 @@
         collapseNavMenu = !collapseNavMenu;
     }
 
+    [Inject] public IServiceProvider ServiceProvider { get; set; }
+
     RunMode _runMode = new RunMode {Mode = "..."};
 
     protected override async Task OnInitializedAsync()
     {
-        _runMode = await Http.GetJsonAsync<RunMode>("api/SampleData/GetRunMode");
+        var runMode = ServiceProvider.GetService(typeof(RunMode)) as RunMode;
+        if (runMode != null)
+            _runMode = runMode;
+        else
+            _runMode = await Http.GetJsonAsync<RunMode>("api/SampleData/GetRunMode");
     }
 }

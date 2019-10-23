@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Blazor.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using MyBlazorApp.Models;
 
 namespace MyBlazorApp
 {
@@ -17,6 +19,10 @@ namespace MyBlazorApp
 
         public static IWebAssemblyHostBuilder CreateHostBuilder(string[] args) =>
             BlazorWebAssemblyHost.CreateDefaultBuilder()
+	            .ConfigureServices(services =>
+	            {
+		            services.AddSingleton(new RunMode {Mode = "Self-Host"});
+	            })
                 .UseBlazorStartup<ClientStartup>();
     }
 }

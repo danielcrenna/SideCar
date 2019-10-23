@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MyBlazorApp.Shared\MyBlazorApp.Shared.csproj" />
     <ProjectReference Include="..\MyBlazorApp\MyBlazorApp.csproj" />
     <ProjectReference Include="..\SideCar.AspNetCore\SideCar.AspNetCore.csproj" />
     <ProjectReference Include="..\SideCar.Blazor.Server\SideCar.Blazor.Server.csproj" />
